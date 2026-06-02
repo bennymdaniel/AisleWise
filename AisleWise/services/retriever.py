@@ -24,6 +24,13 @@ def cheapest_products(limit=5):
     )
 
 
+def list_products(limit=8):
+    return query_db(
+        "SELECT * FROM products ORDER BY name ASC LIMIT ?",
+        (limit,)
+    )
+
+
 def low_stock_products(limit=6):
     return query_db(
         "SELECT * FROM products WHERE stock < 5 ORDER BY stock ASC LIMIT ?",

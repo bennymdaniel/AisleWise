@@ -3,6 +3,7 @@ from .retriever import (
     search_category,
     alternative_products,
     cheapest_products,
+    list_products,
     low_stock_products,
     product_location_lookup,
     recommend_products_by_category,
@@ -18,7 +19,7 @@ def build_context(products):
 
     lines = []
     for product in products[:8]:
-        description = product.get("description") or "No description available."
+        description = product["description"] if product["description"] else "No description available."
         lines.append(
             "Product:\n"
             f"Name: {product['name']}\n"
@@ -34,8 +35,33 @@ def build_context(products):
 def answer_customer_question(query):
     query_lower = query.lower()
     products = []
+    fallback_message = (
+        "Please ask store related questions. For example:\n"
+        "1. What products do we have?\n"
+        "2. Where are washrooms?\n"
+        "3. Where is milk?\n"
+        "4. Where can I find bread?\n"
+        "5. What is the cheapest product?"
+    )
 
-    if "where" in query_lower or "find" in query_lower or "aisle" in query_lower:
+    catalog_request = any(
+        phrase in query_lower
+        for phrase in [
+            "what products",
+            "what do you have",
+            "what's available",
+            "whats available",
+            "available products",
+            "show products",
+            "list products",
+            "what items",
+            "what stock",
+        ]
+    )
+
+    if catalog_request:
+        products = list_products()
+    elif "where" in query_lower or "find" in query_lower or "aisle" in query_lower:
         products = product_location_lookup(query)
     elif "under" in query_lower or "below" in query_lower or "₹" in query_lower:
         budget = 100
@@ -59,7 +85,7 @@ def answer_customer_question(query):
     elif "category" in query_lower or any(cat in query_lower for cat in ["dairy", "snacks", "beverages", "bakery", "frozen", "personal care", "household"]):
         products = search_category(query_lower)
     else:
-        products = search_products(query)
+        return fallback_message
 
     context = build_context(products)
     return generate_response(query, context)
