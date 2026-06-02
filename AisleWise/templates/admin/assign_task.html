@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold m-0">Assign Restocking Task</h3>
+            <p class="text-muted small">Delegate restocking duties to active store workers.</p>
+          </div>
+          <a class="btn btn-secondary rounded-3 btn-sm" href="{{ url_for('admin.tasks') }}">Back to Tasks</a>
+        </div>
+        
+        {% if error %}
+          <div class="alert alert-danger py-2 small mb-3">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="product_id">Select Product</label>
+            <select class="form-select py-2 rounded-3" id="product_id" name="product_id" onchange="updatePrefilledDescription()" required>
+              <option value="" disabled selected>-- Select a product to restock --</option>
+              {% for p in products %}
+                <option value="{{ p['id'] }}" data-name="{{ p['name'] }}" data-aisle="{{ p['aisle'] }}" data-stock="{{ p['stock'] }}" {% if request.args.get('product_id')|int == p['id'] %}selected{% endif %}>
+                  {{ p['name'] }} (Aisle {{ p['aisle'] }}) — Current Stock: {{ p['stock'] }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="worker_id">Assign to Worker</label>
+            <select class="form-select py-2 rounded-3" id="worker_id" name="worker_id" required>
+              <option value="" disabled selected>-- Select an active worker --</option>
+              {% for w in active_workers %}
+                <option value="{{ w['id'] }}">{{ w['name'] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label fw-semibold small" for="description">Task Instruction / Description</label>
+            <textarea class="form-control py-2 rounded-3" id="description" name="description" rows="3" placeholder="Enter task instructions for the worker..." required></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary rounded-3 px-4 py-2">Assign Task</button>
+          <a class="btn btn-outline-secondary rounded-3 px-4 py-2 ms-2" href="{{ url_for('admin.tasks') }}">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updatePrefilledDescription() {
+    const select = document.getElementById('product_id');
+    const selectedOption = select.options[select.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+      const name = selectedOption.getAttribute('data-name');
+      const aisle = selectedOption.getAttribute('data-aisle');
+      const stock = selectedOption.getAttribute('data-stock');
+      
+      const descArea = document.getElementById('description');
+      descArea.value = `Restock ${name} in Aisle ${aisle}. Current stock is low (${stock} items remaining). Please bring stock level up to standard level (15+).`;
+    }
+  }
+
+  // Run on page load if pre-selected via query parameter
+  window.addEventListener('DOMContentLoaded', () => {
+    updatePrefilledDescription();
+  });
+</script>
+{% endblock %}

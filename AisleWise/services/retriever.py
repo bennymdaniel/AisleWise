@@ -1,4 +1,41 @@
+import difflib
+import re
+
 from database.db import query_db
+
+
+def _normalize_text(value):
+    return re.sub(r"[^a-z0-9]+", " ", (value or "").lower()).strip()
+
+
+def _score_product(query, product):
+    query_text = _normalize_text(query)
+    if not query_text:
+        return 0.0
+
+    fields = [
+        product["name"],
+        product["category"],
+        product["aisle"],
+        product["description"] or "",
+    ]
+    field_text = " ".join(_normalize_text(field) for field in fields if field)
+    if not field_text:
+        return 0.0
+
+    best_ratio = max(
+        difflib.SequenceMatcher(None, query_text, _normalize_text(field)).ratio()
+        for field in fields
+        if field
+    )
+
+    query_tokens = set(query_text.split())
+    field_tokens = set(field_text.split())
+    token_overlap = len(query_tokens & field_tokens)
+    if query_tokens:
+        best_ratio += (token_overlap / len(query_tokens)) * 0.25
+
+    return min(best_ratio, 1.0)
 
 
 def search_products(query, limit=6):
@@ -7,6 +44,17 @@ def search_products(query, limit=6):
         "SELECT * FROM products WHERE LOWER(name) LIKE ? OR LOWER(category) LIKE ? OR LOWER(aisle) LIKE ? ORDER BY stock DESC LIMIT ?",
         (search, search, search, limit)
     )
+
+
+def search_products_fuzzy(query, limit=6, threshold=0.45):
+    products = query_db("SELECT * FROM products")
+    ranked = [
+        (product, _score_product(query, product))
+        for product in products
+    ]
+    ranked = [item for item in ranked if item[1] >= threshold]
+    ranked.sort(key=lambda item: item[1], reverse=True)
+    return [product for product, _score in ranked[:limit]]
 
 
 def search_category(category, limit=8):

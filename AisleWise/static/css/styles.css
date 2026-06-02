@@ -1,11 +1,75 @@
+/* Base Reset & Typography */
 body {
-  background-color: #f8f9fa;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f6f8fb;
+  color: #2b303a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 main {
-  min-height: 70vh;
+  flex: 1 0 auto;
 }
 
+/* Custom Color Tokens & Gradients */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7, #4895ef);
+}
+
+.text-primary-emphasis {
+  color: #0b5ed7 !important;
+}
+
+/* Card Enhancements & Hover States */
 .card {
-  border: 1px solid #dee2e6;
+  transition: transform 0.25s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.25s ease-in-out;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.hover-bg-primary-subtle:hover {
+  background-color: rgba(13, 110, 253, 0.08) !important;
+  color: #0d6efd !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Micro-animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.product-card {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Custom Utility Classes */
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
 }

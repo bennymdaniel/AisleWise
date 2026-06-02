@@ -1,34 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h3 class="card-title">Add Worker</h3>
-          {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-          {% endif %}
-          <form method="post">
-            <div class="mb-3">
-              <label class="form-label">Name</label>
-              <input type="text" name="name" class="form-control" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" required />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">Status</label>
-              <select name="status" class="form-select">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-            <button class="btn btn-primary">Add Worker</button>
-            <a class="btn btn-secondary ms-2" href="{{ url_for('admin.workers') }}">Cancel</a>
-          </form>
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h3 class="fw-bold m-0">Add Worker Account</h3>
+            <p class="text-muted small">Register a new store worker in the system.</p>
+          </div>
+          <a class="btn btn-secondary rounded-3 btn-sm" href="{{ url_for('admin.workers') }}">Back to Workers</a>
         </div>
+        
+        {% if error %}
+          <div class="alert alert-danger py-2 small mb-3">{{ error }}</div>
+        {% endif %}
+        
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="name">Worker Name</label>
+            <input type="text" class="form-control py-2 rounded-3" id="name" name="name" placeholder="e.g., Alice Johnson" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="email">Gmail Address</label>
+            <input type="email" class="form-control py-2 rounded-3" id="email" name="email" placeholder="e.g., alice.johnson@gmail.com" required>
+            <div class="form-text text-muted small">Workers must log in using an approved Gmail address.</div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label fw-semibold small" for="status">Initial Status</label>
+            <select class="form-select py-2 rounded-3" id="status" name="status" required>
+              <option value="Active" selected>Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="btn btn-primary rounded-3 px-4 py-2">Save Worker</button>
+          <a class="btn btn-outline-secondary rounded-3 px-4 py-2 ms-2" href="{{ url_for('admin.workers') }}">Cancel</a>
+        </form>
       </div>
     </div>
   </div>
+</div>
 {% endblock %}

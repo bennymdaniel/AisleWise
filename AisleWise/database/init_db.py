@@ -4,10 +4,12 @@ from .db import get_db
 
 def init_db():
     db = get_db()
+
+    # Create products table
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             category TEXT NOT NULL,
             price REAL NOT NULL,
@@ -18,14 +20,25 @@ def init_db():
         """
     )
 
+    # Check for description column
     existing_columns = [row[1] for row in db.execute("PRAGMA table_info(products)").fetchall()]
     if "description" not in existing_columns:
         db.execute("ALTER TABLE products ADD COLUMN description TEXT")
 
+    # Rename worker_accounts to workers if it exists
+    worker_accounts_exists = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='worker_accounts'").fetchone()
+    if worker_accounts_exists:
+        workers_exists = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='workers'").fetchone()
+        if not workers_exists:
+            db.execute("ALTER TABLE worker_accounts RENAME TO workers")
+        else:
+            db.execute("DROP TABLE worker_accounts")
+
+    # Create workers table
     db.execute(
         """
-        CREATE TABLE IF NOT EXISTS worker_accounts (
-            id INTEGER PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS workers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             status TEXT NOT NULL
@@ -33,10 +46,47 @@ def init_db():
         """
     )
 
+    # Rename admin to admins if it exists
+    admin_exists = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admin'").fetchone()
+    if admin_exists:
+        admins_exists = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='admins'").fetchone()
+        if not admins_exists:
+            db.execute("ALTER TABLE admin RENAME TO admins")
+        else:
+            db.execute("DROP TABLE admin")
+
+    # Create admins table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            store_id TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+        """
+    )
+
+    # Create tasks table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            worker_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'Pending',
+            timestamp TEXT NOT NULL,
+            FOREIGN KEY (worker_id) REFERENCES workers(id),
+            FOREIGN KEY (product_id) REFERENCES products(id)
+        )
+        """
+    )
+
+    # Create activity_logs table
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS activity_logs (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             worker_email TEXT,
             product_id INTEGER,
             action TEXT,
@@ -45,61 +95,57 @@ def init_db():
         """
     )
 
+    # Create customer_chats table
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS customer_chats (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id TEXT,
             user_message TEXT,
             bot_response TEXT,
-            timestamp TEXT
+            timestamp TEXT,
+            products_json TEXT
         )
         """
     )
 
+    # Create customer_queries table
     db.execute(
         """
         CREATE TABLE IF NOT EXISTS customer_queries (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             query TEXT,
             response TEXT,
             timestamp TEXT
         )
         """
     )
-    db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS admin (
-            id INTEGER PRIMARY KEY,
-            store_id TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
-        )
-        """
-    )
 
+    # Seed admins table
     admin_row = db.execute(
-        "SELECT id FROM admin WHERE store_id = ?", ("admin",)
+        "SELECT id FROM admins WHERE store_id = ?", ("admin",)
     ).fetchone()
     if admin_row is None:
         db.execute(
-            "INSERT INTO admin (store_id, password) VALUES (?, ?)",
+            "INSERT INTO admins (store_id, password) VALUES (?, ?)",
             ("admin", "password123")
         )
 
+    # Seed products table
     product_count = db.execute("SELECT COUNT(1) FROM products").fetchone()[0]
     if product_count == 0:
         sample_products = [
-            ("Milk", "Dairy", 2.99, 12, "A1", "Fresh whole milk.") ,
-            ("Bread", "Bakery", 1.99, 8, "B2", "Sliced white sandwich bread."),
-            ("Eggs", "Dairy", 3.49, 4, "A1", "Carton of a dozen eggs."),
-            ("Coffee", "Beverages", 9.99, 3, "C5", "Ground coffee beans, 12 oz."),
-            ("Apples", "Produce", 0.99, 15, "D3", "Red apples, sold each."),
-            ("Coca-Cola", "Beverages", 1.49, 7, "C5", "330ml can of soft drink."),
-            ("Granola Bar", "Snacks", 0.89, 10, "E1", "Healthy oat and fruit snack."),
-            ("Orange Juice", "Beverages", 4.99, 5, "C6", "Fresh squeezed orange juice."),
-            ("Frozen Pizza", "Frozen Foods", 6.99, 6, "F2", "Family-size frozen pizza."),
-            ("Shampoo", "Personal Care", 5.99, 9, "G3", "Daily care shampoo, 250ml."),
-            ("Dish Soap", "Household", 2.49, 12, "H1", "Liquid soap for dishes."),
+            ("Milk", "Dairy", 90.00, 12, "A1", "Fresh whole milk, 1 Liter."),
+            ("Bread", "Bakery", 50.00, 8, "B2", "Sliced white sandwich bread, 400g."),
+            ("Eggs", "Dairy", 60.00, 4, "A1", "Carton of a dozen fresh white eggs."),
+            ("Coffee", "Beverages", 120.00, 3, "C5", "Ground dark roast coffee beans, 12 oz."),
+            ("Apples", "Produce", 100.00, 15, "D3", "Crisp red apples, 1 kg pack."),
+            ("Coca-Cola", "Beverages", 60.00, 7, "C5", "330ml can of carbonated soft drink."),
+            ("Granola Bar", "Snacks", 30.00, 10, "E1", "Healthy oat and fruit snack bar, 40g."),
+            ("Orange Juice", "Beverages", 40.00, 5, "C6", "Pure fresh squeezed orange juice, 500ml."),
+            ("Frozen Pizza", "Frozen Foods", 130.00, 2, "F2", "Family-size frozen cheese pizza, 400g."),
+            ("Shampoo", "Personal Care", 120.00, 9, "G3", "Daily care moisturizing shampoo, 250ml."),
+            ("Dish Soap", "Household", 60.00, 12, "H1", "Liquid degreasing soap for dishes, 500ml."),
         ]
         for product in sample_products:
             db.execute(
@@ -107,17 +153,17 @@ def init_db():
                 product
             )
 
-    # Seed sample worker accounts if none exist
-    worker_count = db.execute("SELECT COUNT(1) FROM worker_accounts").fetchone()[0]
+    # Seed workers table with approved Gmail accounts
+    worker_count = db.execute("SELECT COUNT(1) FROM workers").fetchone()[0]
     if worker_count == 0:
         sample_workers = [
-            ("John Doe", "john@example.com", "Active"),
-            ("Jane Smith", "jane@example.com", "Active"),
-            ("Bob Brown", "bob@example.com", "Inactive")
+            ("John Doe", "john.doe@gmail.com", "Active"),
+            ("Jane Smith", "jane.smith@gmail.com", "Active"),
+            ("Bob Brown", "bob.brown@gmail.com", "Inactive")
         ]
         for w in sample_workers:
             db.execute(
-                "INSERT OR IGNORE INTO worker_accounts (name, email, status) VALUES (?, ?, ?)",
+                "INSERT OR IGNORE INTO workers (name, email, status) VALUES (?, ?, ?)",
                 w
             )
 

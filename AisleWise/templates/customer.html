@@ -1,66 +1,121 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Customer Assistant</h2>
-      <p class="text-muted">Ask Keryx for product locations, deals, healthy options, and category guidance.</p>
-    </div>
-    <div>
-      <a class="btn btn-primary" href="{{ url_for('customer.chat') }}">Open Chat</a>
-    </div>
-  </div>
-
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <div class="card border-primary h-100">
-        <div class="card-body">
-          <h5 class="card-title">Find Product</h5>
-          <p class="card-text">Ask where any product is located in the store.</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card border-success h-100">
-        <div class="card-body">
-          <h5 class="card-title">Best Deals</h5>
-          <p class="card-text">Discover budget-friendly items and cheap alternatives.</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card border-warning h-100">
-        <div class="card-body">
-          <h5 class="card-title">Healthy Options</h5>
-          <p class="card-text">Get healthy snack and gluten-free recommendations.</p>
+<div class="row g-4">
+  <!-- Welcome Banner -->
+  <div class="col-12">
+    <div class="card border-0 bg-gradient-primary text-white rounded-4 shadow-sm overflow-hidden position-relative">
+      <div class="card-body p-5">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h1 class="fw-bold mb-2">Hello, {{ session['customer_google_user']['name'] }}!</h1>
+            <p class="lead mb-4 opacity-90">Welcome to your AisleWise shopping portal. Keryx, your AI supermarket assistant, is ready to help you navigate and shop efficiently.</p>
+            <a class="btn btn-light text-primary fw-semibold btn-lg px-4 py-2 rounded-3 shadow" href="{{ url_for('customer.chat') }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-chat-text-fill me-2" viewBox="0 0 16 16">
+                <path d="M16 8c0 3.866-3.582 7-8 7a9 9 0 0 1-2.347-.306c-.584.296-1.925.864-4.181 1.234-.2.032-.352-.176-.273-.362.354-.836.674-1.95.77-2.966C.744 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7M5 8a1 1 0 1 0-2 0 1 1 0 0 0 2 0m4 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0m3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2"/>
+              </svg>
+              Start Chat with Keryx
+            </a>
+          </div>
+          <div class="col-md-4 text-end d-none d-md-block opacity-75">
+            <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" fill="currentColor" class="bi bi-cart-check-fill" viewBox="0 0 16 16">
+              <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-1.646-6.854-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Browse Categories</h5>
-      <div class="d-flex flex-wrap gap-2">
-        {% for category in categories %}
-          <span class="badge bg-secondary py-2 px-3">{{ category }}</span>
-        {% endfor %}
+  <!-- Feature Cards -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100 text-center hover-lift">
+      <div class="card-body p-4 d-flex flex-column align-items-center">
+        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 mb-3 d-inline-flex">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+          </svg>
+        </div>
+        <h5 class="fw-bold mb-2">Aisle Navigation</h5>
+        <p class="text-muted small mb-4">Unsure where items are located? Simply ask Keryx for the exact aisle numbers of products in the store.</p>
+        <a class="btn btn-outline-primary btn-sm rounded-pill px-3 mt-auto" href="{{ url_for('customer.chat', query='Which aisle has coffee?') }}">Try: Find Coffee</a>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Suggested Questions</h5>
-      <ul>
-        <li>Where can I find milk?</li>
-        <li>Show snacks under ₹100</li>
-        <li>Cheapest soft drink available</li>
-        <li>Alternatives to Coca-Cola</li>
-        <li>Products in Dairy category</li>
-        <li>What aisle contains bread?</li>
-        <li>Recommend healthy snacks</li>
-        <li>Show gluten-free products</li>
-      </ul>
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100 text-center hover-lift">
+      <div class="card-body p-4 d-flex flex-column align-items-center">
+        <div class="bg-success bg-opacity-10 text-success rounded-circle p-3 mb-3 d-inline-flex">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-piggy-bank-fill" viewBox="0 0 16 16">
+            <path d="M7.964 1.527a.5.5 0 0 0-.928-.022L4.78 7H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h.83l.542 3.05a1 1 0 0 0 .984.825h6.288a1 1 0 0 0 .984-.825L11.17 10H15a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-3.78l-2.256-5.473ZM8 8a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/>
+          </svg>
+        </div>
+        <h5 class="fw-bold mb-2">Budget Recommendations</h5>
+        <p class="text-muted small mb-4">Shopping on a budget? Tell Keryx your price limit to find cheap, highly-rated product alternatives.</p>
+        <a class="btn btn-outline-success btn-sm rounded-pill px-3 mt-auto" href="{{ url_for('customer.chat', query='Show snacks under ₹50') }}">Try: Snacks under ₹50</a>
+      </div>
     </div>
   </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100 text-center hover-lift">
+      <div class="card-body p-4 d-flex flex-column align-items-center">
+        <div class="bg-warning bg-opacity-10 text-warning-emphasis rounded-circle p-3 mb-3 d-inline-flex">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-heart-pulse-fill" viewBox="0 0 16 16">
+            <path d="M1.475 9C2.702 10.84 4.779 12.871 8 15c3.221-2.129 5.298-4.16 6.525-6H12a.5.5 0 0 1-.465-.315l-1.455-3.637-1.92 7.202a.5.5 0 0 1-.954.043L5.347 7.027 4.316 8.573A.5.5 0 0 1 3.9 8.8H1.475Z"/>
+            <path d="M4.886 4h.885l1.328 3.983 1.825-6.844a.5.5 0 0 1 .948-.06l1.547 3.867 1.108-.222A1.5 1.5 0 0 0 14 3.5v-2A1.5 1.5 0 0 0 12.5 0h-9A1.5 1.5 0 0 0 2 1.5v2A1.5 1.5 0 0 0 3.5 5h1.386Z"/>
+          </svg>
+        </div>
+        <h5 class="fw-bold mb-2">Healthy Selections</h5>
+        <p class="text-muted small mb-4">Looking for nutritious food? Ask Keryx to suggest the healthiest dairy and bakery alternatives.</p>
+        <a class="btn btn-outline-warning btn-sm rounded-pill px-3 mt-auto" href="{{ url_for('customer.chat', query='Recommend healthy snacks') }}">Try: Healthy Snacks</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Browse Categories -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">Browse by Department</h5>
+        <p class="text-muted small mb-4">Click on any department to view matching items in stock through our AI chat.</p>
+        <div class="d-flex flex-wrap gap-2">
+          {% for category in categories %}
+            <a href="{{ url_for('customer.chat', query='Show products in ' ~ category ~ ' category') }}" class="btn btn-light btn-sm px-3 py-2 border rounded-3 hover-shadow d-flex align-items-center text-dark">
+              <span class="spinner-grow spinner-grow-sm text-primary me-2" role="status" style="width: 6px; height: 6px;"></span>
+              {{ category }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggested Prompts -->
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">Suggested Questions for Keryx</h5>
+        <div class="list-group list-group-flush">
+          <a href="{{ url_for('customer.chat', query='Where is milk?') }}" class="list-group-item list-group-item-action border-0 py-2 ps-0 d-flex justify-content-between align-items-center small text-muted">
+            <span>🥛 Where is milk located in the store?</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>
+          </a>
+          <a href="{{ url_for('customer.chat', query='What is the cheapest beverage?') }}" class="list-group-item list-group-item-action border-0 py-2 ps-0 d-flex justify-content-between align-items-center small text-muted">
+            <span>🥤 What is the cheapest beverage?</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>
+          </a>
+          <a href="{{ url_for('customer.chat', query='Show alternatives to Coca-Cola') }}" class="list-group-item list-group-item-action border-0 py-2 ps-0 d-flex justify-content-between align-items-center small text-muted">
+            <span>🔄 Are there alternatives to Coca-Cola?</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>
+          </a>
+          <a href="{{ url_for('customer.chat', query='Who won the World Cup?') }}" class="list-group-item list-group-item-action border-0 py-2 ps-0 d-flex justify-content-between align-items-center small text-muted">
+            <span>⚽ Unrelated query: Who won the World Cup?</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,44 +1,147 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Admin Dashboard</h2>
-      <p class="text-muted">Welcome to the dashboard. Use the links below to manage inventory.</p>
-    </div>
-    <div>
-      <a class="btn btn-secondary me-2" href="{{ url_for('admin.inventory') }}">View Inventory</a>
-      <a class="btn btn-success me-2" href="{{ url_for('admin.add_product') }}">Add Product</a>
-      <a class="btn btn-info me-2" href="{{ url_for('admin.workers') }}">Worker Management</a>
-      <a class="btn btn-outline-dark" href="{{ url_for('admin.logout') }}">Logout</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold m-0">Admin Dashboard</h2>
+    <p class="text-muted">Manage products inventory, workers accounts, tasks assignments, and track supermarket queries analytics.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-primary rounded-3" href="{{ url_for('admin.inventory') }}">Inventory (CRUD)</a>
+    <a class="btn btn-success" href="{{ url_for('admin.add_product') }}">Add Product</a>
+    <a class="btn btn-info text-white rounded-3" href="{{ url_for('admin.workers') }}">Workers</a>
+    <a class="btn btn-secondary rounded-3" href="{{ url_for('admin.tasks') }}">Restock Tasks</a>
+    <a class="btn btn-dark rounded-3" href="{{ url_for('admin.analytics') }}">Analytics Logs</a>
+    <a class="btn btn-outline-danger rounded-3" href="{{ url_for('admin.logout') }}">Logout</a>
+  </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-secondary small mb-1">Total Products</h6>
+          <h2 class="fw-bold m-0 text-dark">{{ total_products }}</h2>
+        </div>
+        <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box" viewBox="0 0 16 16">
+            <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zM13.5 1.626l-6.5 2.6v7.922l6.5-2.6V1.626zM7.5 14.762V6.838L1 4.239v7.923zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09A1 1 0 0 1 0 12.162V3.5a.5.5 0 0 1 .314-.464z"/>
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-md-4">
-      <div class="card shadow-sm mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Total Products</h5>
-          <p class="display-6">{{ total_products }}</p>
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-secondary small mb-1">Out of Stock</h6>
+          <h2 class="fw-bold m-0 text-danger">{{ out_of_stock }}</h2>
         </div>
-      </div>
-    </div>
-    <div class="col-md-8">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Low Stock Items</h5>
-          {% if low_stock %}
-            <ul class="list-group list-group-flush">
-              {% for product in low_stock %}
-                <li class="list-group-item">
-                  {{ product['name'] }} ({{ product['category'] }}) — stock {{ product['stock'] }}
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-0">No items are below stock threshold.</p>
-          {% endif %}
+        <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+          </svg>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-secondary small mb-1">Active Workers</h6>
+          <h2 class="fw-bold m-0 text-info">{{ active_workers }}</h2>
+        </div>
+        <div class="bg-info bg-opacity-10 text-info rounded-3 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
+            <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724C2.307 10.63 3.285 10 5 10zM3.5 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m1.5-1.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-secondary small mb-1">Pending Tasks</h6>
+          <h2 class="fw-bold m-0 text-warning">{{ pending_tasks }}</h2>
+        </div>
+        <div class="bg-warning bg-opacity-10 text-warning-emphasis rounded-3 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+            <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 2.06c.082-.32.146-.649.19-.983l.99.13a8 8 0 0 1-.22 1.137zm.29 2.016a7 7 0 0 0-.073-.522l.988-.137c.053.377.082.757.086 1.138h-1a7 7 0 0 0-.001-.479zm-.47 2.06a7 7 0 0 0-.323-.979l.909-.413a8 8 0 0 1 .425 1.144zM10.5 12h-2a.5.5 0 0 1-.5-.5v-4a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-3.5v3.5a.5.5 0 0 1-.5.5"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Low Stock Monitoring & Alerts -->
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Low Stock Monitoring (Alert Threshold < 5)</h5>
+      <a class="btn btn-warning btn-sm rounded-pill text-warning-emphasis fw-bold" href="{{ url_for('admin.assign_task') }}">
+        Assign Restocking Task
+      </a>
+    </div>
+
+    {% if low_stock %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr class="table-light">
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Current Stock</th>
+              <th>Aisle</th>
+              <th class="text-end">Assign Task</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in low_stock %}
+              <tr>
+                <td class="fw-semibold">{{ product['name'] }}</td>
+                <td>{{ product['category'] }}</td>
+                <td>₹{{ '%.2f' | format(product['price']) }}</td>
+                <td>
+                  {% if product['stock'] == 0 %}
+                    <span class="badge bg-danger">OUT OF STOCK (0)</span>
+                  {% else %}
+                    <span class="badge bg-warning text-warning-emphasis">LOW STOCK ({{ product['stock'] }})</span>
+                  {% endif %}
+                </td>
+                <td><span class="badge bg-light text-dark border">Aisle {{ product['aisle'] }}</span></td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary rounded-3" href="{{ url_for('admin.assign_task') }}?product_id={{ product['id'] }}">
+                    Create Task
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-4">
+        <div class="text-success mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-check2-circle" viewBox="0 0 16 16">
+            <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 0 1-11 0"/>
+            <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
+          </svg>
+        </div>
+        <h6 class="fw-bold">Inventory Healthy</h6>
+        <p class="text-muted small mb-0">No items are below stock threshold (< 5).</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}

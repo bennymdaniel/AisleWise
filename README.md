@@ -1,2 +1,0 @@
-# AisleWise
-Smart Retail Assistant 

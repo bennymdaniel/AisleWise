@@ -6,8 +6,8 @@
       <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h3 class="fw-bold m-0">Add Product</h3>
-            <p class="text-muted small">Insert a new item details into the supermarket inventory database.</p>
+            <h3 class="fw-bold m-0">Edit Product: {{ product['name'] }}</h3>
+            <p class="text-muted small">Update details for this inventory product.</p>
           </div>
           <a class="btn btn-secondary rounded-3 btn-sm" href="{{ url_for('admin.inventory') }}">Back to Inventory</a>
         </div>
@@ -20,37 +20,37 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label fw-semibold small" for="name">Product Name</label>
-              <input type="text" class="form-control py-2 rounded-3" id="name" name="name" placeholder="e.g., Cheddar Cheese" required>
+              <input type="text" class="form-control py-2 rounded-3" id="name" name="name" value="{{ product['name'] }}" required>
             </div>
             
             <div class="col-md-6">
               <label class="form-label fw-semibold small" for="category">Category</label>
-              <input type="text" class="form-control py-2 rounded-3" id="category" name="category" placeholder="e.g., Dairy" required>
+              <input type="text" class="form-control py-2 rounded-3" id="category" name="category" value="{{ product['category'] }}" required>
             </div>
             
             <div class="col-md-4">
               <label class="form-label fw-semibold small" for="price">Price (₹)</label>
-              <input type="number" step="0.01" min="0" class="form-control py-2 rounded-3" id="price" name="price" placeholder="e.g., 99.00" required>
+              <input type="number" step="0.01" min="0" class="form-control py-2 rounded-3" id="price" name="price" value="{{ product['price'] }}" required>
             </div>
             
             <div class="col-md-4">
-              <label class="form-label fw-semibold small" for="stock">Initial Stock Level</label>
-              <input type="number" min="0" class="form-control py-2 rounded-3" id="stock" name="stock" placeholder="e.g., 15" required>
+              <label class="form-label fw-semibold small" for="stock">Stock Level</label>
+              <input type="number" min="0" class="form-control py-2 rounded-3" id="stock" name="stock" value="{{ product['stock'] }}" required>
             </div>
             
             <div class="col-md-4">
               <label class="form-label fw-semibold small" for="aisle">Store Aisle Location</label>
-              <input type="text" class="form-control py-2 rounded-3" id="aisle" name="aisle" placeholder="e.g., A3" required>
+              <input type="text" class="form-control py-2 rounded-3" id="aisle" name="aisle" value="{{ product['aisle'] }}" required>
             </div>
             
             <div class="col-12">
               <label class="form-label fw-semibold small" for="description">Product Description</label>
-              <textarea class="form-control py-2 rounded-3" id="description" name="description" rows="3" placeholder="Enter product details like weight, fresh status, or nutritional notes..."></textarea>
+              <textarea class="form-control py-2 rounded-3" id="description" name="description" rows="3" placeholder="Describe the product (size, packaging, fresh status)...">{{ product['description'] or '' }}</textarea>
             </div>
           </div>
           
           <div class="mt-4 pt-2">
-            <button type="submit" class="btn btn-success rounded-3 px-4 py-2">Save Product</button>
+            <button type="submit" class="btn btn-primary rounded-3 px-4 py-2">Update Product</button>
             <a class="btn btn-outline-secondary rounded-3 px-4 py-2 ms-2" href="{{ url_for('admin.inventory') }}">Cancel</a>
           </div>
         </form>

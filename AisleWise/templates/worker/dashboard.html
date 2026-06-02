@@ -1,72 +1,138 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2>Worker Dashboard</h2>
-      <p class="text-muted">Overview of assigned tasks and inventory.</p>
-    </div>
-    <div>
-      <a class="btn btn-outline-secondary me-2" href="{{ url_for('worker.profile') }}">Profile</a>
-      <a class="btn btn-outline-dark" href="{{ url_for('worker.logout') }}">Logout</a>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold m-0">Worker Dashboard</h2>
+    <p class="text-muted">Welcome back, <span class="fw-semibold text-primary">{{ session['worker_name'] }}</span>. Here are your assigned tasks.</p>
   </div>
+  <div>
+    <a class="btn btn-outline-secondary me-2 rounded-3 px-3" href="{{ url_for('worker.profile') }}">Profile</a>
+    <a class="btn btn-outline-dark rounded-3 px-3" href="{{ url_for('worker.logout') }}">Logout</a>
+  </div>
+</div>
 
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card text-white bg-primary mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Assigned Tasks</h5>
-          <p class="display-6">{{ assigned_tasks }}</p>
+<!-- Status Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 bg-primary bg-opacity-10 text-primary h-100 rounded-3">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-primary small mb-1">Assigned Tasks</h6>
+          <h2 class="fw-bold m-0">{{ assigned_tasks }}</h2>
         </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-white bg-warning mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Low Stock Items</h5>
-          <p class="display-6">{{ low_stock_count }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-white bg-success mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Products Updated Today</h5>
-          <p class="display-6">{{ updated_today }}</p>
+        <div class="bg-primary text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-list-check" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5M3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0m0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0m0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0"/>
+          </svg>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title">Low Stock Items</h5>
-      {% if low_stock_items %}
-        <table class="table table-striped">
+  <div class="col-md-4">
+    <div class="card border-0 bg-warning bg-opacity-10 text-warning-emphasis h-100 rounded-3">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-warning small mb-1">Low Stock Alerts</h6>
+          <h2 class="fw-bold m-0">{{ low_stock_count }}</h2>
+        </div>
+        <div class="bg-warning text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-exclamation-triangle" viewBox="0 0 16 16">
+            <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147 1.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+            <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 bg-success bg-opacity-10 text-success h-100 rounded-3">
+      <div class="card-body p-4 d-flex align-items-center justify-content-between">
+        <div>
+          <h6 class="fw-bold text-uppercase text-success small mb-1">Restocked Today</h6>
+          <h2 class="fw-bold m-0">{{ updated_today }}</h2>
+        </div>
+        <div class="bg-success text-white rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-journal-check" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M10.854 6.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 8.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+            <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+            <path d="M1 5h14v1H1z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Assigned Tasks List -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Your Assigned Restocking Tasks</h5>
+      <a href="{{ url_for('worker.low_stock') }}" class="btn btn-sm btn-outline-warning rounded-pill">View All Low Stock Items</a>
+    </div>
+    
+    {% if assigned_tasks_list %}
+      <div class="table-responsive">
+        <table class="table align-middle">
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Stock</th>
-              <th>Aisle</th>
-              <th>Category</th>
-              <th></th>
+            <tr class="table-light">
+              <th scope="col">Task Details</th>
+              <th scope="col">Product</th>
+              <th scope="col">Location</th>
+              <th scope="col">Stock Level</th>
+              <th scope="col">Assigned</th>
+              <th scope="col" class="text-end">Action</th>
             </tr>
           </thead>
           <tbody>
-            {% for p in low_stock_items %}
+            {% for task in assigned_tasks_list %}
               <tr>
-                <td>{{ p['name'] }}</td>
-                <td>{{ p['stock'] }}</td>
-                <td>{{ p['aisle'] }}</td>
-                <td>{{ p['category'] }}</td>
-                <td><a class="btn btn-sm btn-primary" href="{{ url_for('worker.restock', product_id=p['id']) }}">Restock</a></td>
+                <td>
+                  <div class="fw-semibold">{{ task['task_desc'] }}</div>
+                </td>
+                <td>
+                  <div class="fw-bold text-dark">{{ task['product_name'] }}</div>
+                  <span class="badge bg-secondary-subtle text-secondary-emphasis small">{{ task['product_category'] }}</span>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border">Aisle {{ task['product_aisle'] }}</span>
+                </td>
+                <td>
+                  {% if task['product_stock'] <= 0 %}
+                    <span class="badge bg-danger-subtle text-danger">Out of Stock</span>
+                  {% elif task['product_stock'] < 5 %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis">Low ({{ task['product_stock'] }})</span>
+                  {% else %}
+                    <span class="badge bg-success-subtle text-success">{{ task['product_stock'] }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <small class="text-muted">{{ task['task_time'] }}</small>
+                </td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-primary rounded-3 px-3" href="{{ url_for('worker.restock', product_id=task['product_id']) }}">
+                    Restock Product
+                  </a>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
-      {% else %}
-        <p class="text-muted">No low stock items.</p>
-      {% endif %}
-    </div>
+      </div>
+    {% else %}
+      <div class="text-center py-4">
+        <div class="text-success mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-check2-circle" viewBox="0 0 16 16">
+            <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 0 1-11 0"/>
+            <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
+          </svg>
+        </div>
+        <h6 class="fw-bold">No Pending Tasks</h6>
+        <p class="text-muted small mb-0">Good job! You have completed all assigned restocking tasks.</p>
+      </div>
+    {% endif %}
   </div>
+</div>
 {% endblock %}

@@ -1,21 +1,33 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <h4 class="card-title">Restock {{ product['name'] }}</h4>
-          <p class="text-muted">Current stock: {{ product['stock'] }}</p>
-          <form method="post">
-            <div class="mb-3">
-              <label class="form-label">New Stock Quantity</label>
-              <input type="number" name="stock" class="form-control" required />
-            </div>
-            <button class="btn btn-primary">Update Stock</button>
-            <a class="btn btn-secondary ms-2" href="{{ url_for('worker.dashboard') }}">Cancel</a>
-          </form>
-        </div>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 bg-white">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-1">Restock: {{ product['name'] }}</h4>
+        <p class="text-muted small">Current stock: 
+          {% if product['stock'] <= 0 %}
+            <span class="badge bg-danger">Out of Stock (0)</span>
+          {% else %}
+            <span class="badge bg-warning text-warning-emphasis">{{ product['stock'] }} remaining</span>
+          {% endif %}
+          in Aisle {{ product['aisle'] }}
+        </p>
+        
+        <form method="post" class="mt-4">
+          <div class="mb-4">
+            <label class="form-label fw-semibold small" for="stock">New Stock Level / Quantity</label>
+            <input type="number" id="stock" name="stock" min="0" class="form-control py-2.5 rounded-3" value="{{ product['stock'] }}" placeholder="Enter the exact new stock count" required />
+            <div class="form-text text-muted small">Enter the total physical count currently available on shelves.</div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <button class="btn btn-primary rounded-3 w-100 py-2.5 shadow fw-semibold">Save Stock Level</button>
+            <a class="btn btn-outline-secondary rounded-3 w-100 py-2.5" href="{{ url_for('worker.dashboard') }}">Cancel</a>
+          </div>
+        </form>
       </div>
     </div>
   </div>
+</div>
 {% endblock %}

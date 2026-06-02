@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold m-0">Restock Tasks</h2>
+    <p class="text-muted">Track status of restocking tasks assigned to store workers.</p>
+  </div>
+  <div>
+    <a class="btn btn-secondary rounded-3 btn-sm me-2" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+    <a class="btn btn-success rounded-3 btn-sm" href="{{ url_for('admin.assign_task') }}">Assign New Task</a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-4">
+    {% if tasks %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr class="table-light">
+              <th scope="col">Worker</th>
+              <th scope="col">Product</th>
+              <th scope="col">Instructions</th>
+              <th scope="col">Assigned</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tasks %}
+              <tr>
+                <td class="fw-bold text-dark">{{ t['worker_name'] }}</td>
+                <td>
+                  <div class="fw-semibold">{{ t['product_name'] }}</div>
+                  <span class="badge bg-light text-muted border small">Aisle {{ t['product_aisle'] }}</span>
+                </td>
+                <td class="small" style="max-width: 300px; white-space: normal;">{{ t['task_desc'] }}</td>
+                <td><small class="text-muted">{{ t['task_time'] }}</small></td>
+                <td>
+                  {% if t['task_status'] == 'Pending' %}
+                    <span class="badge bg-warning text-warning-emphasis">Pending</span>
+                  {% else %}
+                    <span class="badge bg-success">Completed</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <p class="text-muted mb-0">No restocking tasks have been created or assigned yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

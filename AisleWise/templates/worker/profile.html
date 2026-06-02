@@ -1,13 +1,41 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="card">
-    <div class="card-body">
-      <h3 class="card-title">Profile</h3>
-      <p><strong>Name:</strong> {{ worker['name'] }}</p>
-      <p><strong>Email:</strong> {{ worker['email'] }}</p>
-      <p><strong>Status:</strong> {{ worker['status'] }}</p>
-      <p><strong>Total Updates Made:</strong> {{ total_updates }}</p>
-      <a class="btn btn-secondary" href="{{ url_for('worker.dashboard') }}">Back to Dashboard</a>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden bg-white">
+      <div class="card-header bg-gradient-primary text-white text-center py-4 border-0">
+        <div class="bg-white bg-opacity-25 rounded-circle d-inline-flex align-items-center justify-content-center fw-bold text-white mb-2" style="width: 60px; height: 60px; font-size: 24px;">
+          {{ worker['name'][0] }}
+        </div>
+        <h4 class="fw-bold mb-0 text-white">{{ worker['name'] }}</h4>
+        <span class="badge bg-success-subtle text-success mt-1 px-3 py-1 rounded-pill">Store Worker</span>
+      </div>
+      
+      <div class="card-body p-4">
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted fw-semibold small">Gmail Address</span>
+          <span class="fw-semibold">{{ worker['email'] }}</span>
+        </div>
+        
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted fw-semibold small">Duty Status</span>
+          {% if worker['status'] == 'Active' %}
+            <span class="badge bg-success-subtle text-success">Active Duty</span>
+          {% else %}
+            <span class="badge bg-secondary-subtle text-secondary-emphasis">Inactive</span>
+          {% endif %}
+        </div>
+        
+        <div class="mb-4 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted fw-semibold small">Total Stock Updates Done</span>
+          <span class="fw-bold text-primary fs-5">{{ total_updates }}</span>
+        </div>
+        
+        <div class="d-flex gap-2">
+          <a class="btn btn-secondary w-100 rounded-3 py-2" href="{{ url_for('worker.dashboard') }}">Back to Dashboard</a>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 {% endblock %}
