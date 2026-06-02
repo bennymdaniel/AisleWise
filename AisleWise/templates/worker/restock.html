@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h4 class="card-title">Restock {{ product['name'] }}</h4>
+          <p class="text-muted">Current stock: {{ product['stock'] }}</p>
+          <form method="post">
+            <div class="mb-3">
+              <label class="form-label">New Stock Quantity</label>
+              <input type="number" name="stock" class="form-control" required />
+            </div>
+            <button class="btn btn-primary">Update Stock</button>
+            <a class="btn btn-secondary ms-2" href="{{ url_for('worker.dashboard') }}">Cancel</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

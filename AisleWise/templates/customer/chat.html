@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Shopper Chat</h2>
+      <p class="text-muted">Chat with Keryx to get product guidance and recommendations.</p>
+    </div>
+    <div>
+      <a class="btn btn-secondary" href="{{ url_for('customer.index') }}">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body" style="max-height: 520px; overflow-y: auto;">
+      {% if chats %}
+        {% for chat in chats %}
+          <div class="mb-3">
+            <div class="fw-bold">You</div>
+            <div class="border rounded p-3 bg-light">{{ chat['user_message'] }}</div>
+          </div>
+          <div class="mb-4">
+            <div class="fw-bold">Keryx</div>
+            <div class="border rounded p-3 bg-white">{{ chat['bot_response'] }}</div>
+            <div class="text-muted small">{{ chat['timestamp'] }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">Start the conversation by asking a store question.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="post" class="card p-4">
+    <div class="mb-3">
+      <label class="form-label">Ask Keryx</label>
+      <textarea name="message" class="form-control" rows="3" required>{{ user_query or '' }}</textarea>
+    </div>
+    <button class="btn btn-primary">Send</button>
+    {% if bot_response %}
+      <div class="alert alert-success mt-3">Response generated successfully.</div>
+    {% endif %}
+  </form>
+{% endblock %}

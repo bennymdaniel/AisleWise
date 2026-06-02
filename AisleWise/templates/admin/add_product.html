@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+              <h2>Add Product</h2>
+              <p class="text-muted">Enter new product details to insert into inventory.</p>
+            </div>
+            <a class="btn btn-secondary" href="{{ url_for('admin.inventory') }}">Back to Inventory</a>
+          </div>
+          {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endif %}
+          <form method="post">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="name">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label" for="category">Category</label>
+                <input type="text" class="form-control" id="category" name="category" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="price">Price</label>
+                <input type="text" class="form-control" id="price" name="price" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="stock">Stock</label>
+                <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="aisle">Aisle</label>
+                <input type="text" class="form-control" id="aisle" name="aisle" required>
+              </div>
+            </div>
+            <div class="mt-4">
+              <button type="submit" class="btn btn-success">Save Product</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

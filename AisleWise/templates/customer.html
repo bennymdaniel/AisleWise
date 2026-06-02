@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Customer Assistant</h2>
+      <p class="text-muted">Ask Keryx for product locations, deals, healthy options, and category guidance.</p>
+    </div>
+    <div>
+      <a class="btn btn-primary" href="{{ url_for('customer.chat') }}">Open Chat</a>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card border-primary h-100">
+        <div class="card-body">
+          <h5 class="card-title">Find Product</h5>
+          <p class="card-text">Ask where any product is located in the store.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-success h-100">
+        <div class="card-body">
+          <h5 class="card-title">Best Deals</h5>
+          <p class="card-text">Discover budget-friendly items and cheap alternatives.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-warning h-100">
+        <div class="card-body">
+          <h5 class="card-title">Healthy Options</h5>
+          <p class="card-text">Get healthy snack and gluten-free recommendations.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Browse Categories</h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for category in categories %}
+          <span class="badge bg-secondary py-2 px-3">{{ category }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Suggested Questions</h5>
+      <ul>
+        <li>Where can I find milk?</li>
+        <li>Show snacks under ₹100</li>
+        <li>Cheapest soft drink available</li>
+        <li>Alternatives to Coca-Cola</li>
+        <li>Products in Dairy category</li>
+        <li>What aisle contains bread?</li>
+        <li>Recommend healthy snacks</li>
+        <li>Show gluten-free products</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

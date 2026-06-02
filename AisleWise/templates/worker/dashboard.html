@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Worker Dashboard</h2>
+      <p class="text-muted">Overview of assigned tasks and inventory.</p>
+    </div>
+    <div>
+      <a class="btn btn-outline-secondary me-2" href="{{ url_for('worker.profile') }}">Profile</a>
+      <a class="btn btn-outline-dark" href="{{ url_for('worker.logout') }}">Logout</a>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-white bg-primary mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Assigned Tasks</h5>
+          <p class="display-6">{{ assigned_tasks }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-warning mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Low Stock Items</h5>
+          <p class="display-6">{{ low_stock_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-success mb-3">
+        <div class="card-body">
+          <h5 class="card-title">Products Updated Today</h5>
+          <p class="display-6">{{ updated_today }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h5 class="card-title">Low Stock Items</h5>
+      {% if low_stock_items %}
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Stock</th>
+              <th>Aisle</th>
+              <th>Category</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in low_stock_items %}
+              <tr>
+                <td>{{ p['name'] }}</td>
+                <td>{{ p['stock'] }}</td>
+                <td>{{ p['aisle'] }}</td>
+                <td>{{ p['category'] }}</td>
+                <td><a class="btn btn-sm btn-primary" href="{{ url_for('worker.restock', product_id=p['id']) }}">Restock</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">No low stock items.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
