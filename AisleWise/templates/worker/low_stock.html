@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Low Stock Products</h3>
+  <div class="card">
+    <div class="card-body">
+      {% if items %}
+        <table class="table">
+          <thead>
+            <tr><th>Name</th><th>Stock</th><th>Aisle</th><th>Category</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for p in items %}
+              <tr>
+                <td>{{ p['name'] }}</td>
+                <td>{{ p['stock'] }}</td>
+                <td>{{ p['aisle'] }}</td>
+                <td>{{ p['category'] }}</td>
+                <td><a class="btn btn-sm btn-primary" href="{{ url_for('worker.restock', product_id=p['id']) }}">Restock</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="text-muted">No items below threshold.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

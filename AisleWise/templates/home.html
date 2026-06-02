@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="text-center">
+    <h1>Welcome to AisleWise</h1>
+    <p class="lead">A simple inventory and worker dashboard example built with Flask.</p>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-4">
+        <div class="list-group">
+          <a href="/customer" class="list-group-item list-group-item-action">Customer page</a>
+          <a href="/admin" class="list-group-item list-group-item-action">Admin page</a>
+          <a href="/worker" class="list-group-item list-group-item-action">Worker page</a>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
