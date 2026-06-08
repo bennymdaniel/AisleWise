@@ -1,6 +1,5 @@
 import json
 import re
-from functools import wraps
 
 import requests
 
@@ -68,9 +67,6 @@ def tool(func):
 def _placeholder_api_key():
     return not GEMINI_API_KEY or GEMINI_API_KEY.lower().startswith(("replace_with_", "your_"))
 
-
-def _normalize_text(value):
-    return re.sub(r"[^a-z0-9]+", " ", (value or "").lower()).strip()
 
 
 def _build_prompt(query, context=""):
@@ -358,14 +354,4 @@ def answer_customer_question(query):
     if products:
         return {"response": generate_response(query, _build_context(products)), "products": serializable_products}
 
-    return {"response": generate_response(query, _fallback_message()), "products": []}
-
-
-def quick_context(query):
-    result = search_tool(query)
-    if result.get("mode") == "context" and result.get("context"):
-        return result["context"]
-    if result.get("products"):
-        return _build_context(result["products"])
-    products = cheapest_products()
-    return _build_context(products)
+    return {"response": generate_response(query, _fallback_message()), "products": []}

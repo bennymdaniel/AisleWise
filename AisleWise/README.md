@@ -21,6 +21,10 @@ pip install -r requirements.txt
 ```powershell
 python app.py
 ```
+Or use Uvicorn directly:
+```powershell
+uvicorn app:app --port 5000 --reload
+```
 
 4. Open the app in your browser:
 
@@ -46,7 +50,6 @@ Then restart the application.
 
 ## Sample Worker Accounts
 
-- `john@example.com` (Active)
-- `jane@example.com` (Active)
-- `bob@example.com` (Inactive)
-
+- `john.doe@gmail.com` (Active)
+- `jane.smith@gmail.com` (Active)
+- `bob.brown@gmail.com` (Inactive)

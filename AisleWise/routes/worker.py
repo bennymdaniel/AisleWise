@@ -1,31 +1,36 @@
-import re
+import inspect
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from database.db import get_db, query_db
 from datetime import datetime
+from fastapi import APIRouter, Request
+from database.db import get_db, query_db
+from routes import RedirectException, flash
 
-worker_bp = Blueprint("worker", __name__, template_folder="../templates/worker")
-
-
-def worker_login_required(view):
-    @wraps(view)
-    def wrapped_view(**kwargs):
-        if session.get("worker_email") is None:
-            return redirect(url_for("worker.login"))
-        return view(**kwargs)
-    return wrapped_view
+router = APIRouter()
 
 
-@worker_bp.route("/", methods=["GET"])
-def index():
-    return redirect(url_for("worker.login"))
+def worker_login_required(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        request = kwargs.get("request") or (args[0] if args else None)
+        if not request or not request.session.get("worker_email"):
+            raise RedirectException(url="/worker/login")
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
 
 
-@worker_bp.route("/login", methods=["GET", "POST"])
-def login():
+@router.get("/", name="worker.index")
+def index(request: Request):
+    raise RedirectException(url=str(request.url_for("worker.login")))
+
+
+@router.api_route("/login", methods=["GET", "POST"], name="worker.login")
+async def login(request: Request):
     error = None
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        form_data = await request.form()
+        email = form_data.get("email", "").strip().lower()
         
         # Enforce approved Gmail validation
         if not email.endswith("@gmail.com"):
@@ -41,26 +46,27 @@ def login():
             elif worker["status"] != "Active":
                 error = "Access denied: worker account is Inactive."
             else:
-                session.clear()
-                session["worker_email"] = worker["email"]
-                session["worker_name"] = worker["name"]
-                session["worker_id"] = worker["id"]
-                return redirect(url_for("worker.dashboard"))
+                request.session.clear()
+                request.session["worker_email"] = worker["email"]
+                request.session["worker_name"] = worker["name"]
+                request.session["worker_id"] = worker["id"]
+                raise RedirectException(url=str(request.url_for("worker.dashboard")))
                 
-    return render_template("login.html", error=error)
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="worker/login.html", context={"error": error})
 
 
-@worker_bp.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("worker.login"))
+@router.get("/logout", name="worker.logout")
+def logout(request: Request):
+    request.session.clear()
+    raise RedirectException(url=str(request.url_for("worker.login")))
 
 
-@worker_bp.route("/dashboard")
+@router.get("/dashboard", name="worker.dashboard")
 @worker_login_required
-def dashboard():
-    worker_id = session.get("worker_id")
-    worker_email = session.get("worker_email")
+def dashboard(request: Request):
+    worker_id = request.session.get("worker_id")
+    worker_email = request.session.get("worker_email")
     
     # Retrieve assigned pending tasks count
     pending_tasks_row = query_db(
@@ -100,44 +106,50 @@ def dashboard():
         (worker_id,)
     )
 
-    return render_template(
-        "dashboard.html",
-        assigned_tasks=assigned_tasks,
-        low_stock_count=low_stock_count,
-        updated_today=updated_today,
-        assigned_tasks_list=assigned_tasks_list
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        request=request,
+        name="worker/dashboard.html",
+        context={
+            "assigned_tasks": assigned_tasks,
+            "low_stock_count": low_stock_count,
+            "updated_today": updated_today,
+            "assigned_tasks_list": assigned_tasks_list
+        }
     )
 
 
-@worker_bp.route("/low-stock")
+@router.get("/low-stock", name="worker.low_stock")
 @worker_login_required
-def low_stock():
+def low_stock(request: Request):
     items = query_db("SELECT * FROM products WHERE stock < 5 ORDER BY stock ASC")
-    return render_template("low_stock.html", items=items)
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="worker/low_stock.html", context={"items": items})
 
 
-@worker_bp.route("/restock/<int:product_id>", methods=["GET", "POST"])
+@router.api_route("/restock/{product_id:int}", methods=["GET", "POST"], name="worker.restock")
 @worker_login_required
-def restock(product_id):
+async def restock(request: Request, product_id: int):
     db = get_db()
     product = query_db("SELECT * FROM products WHERE id = ?", (product_id,), one=True)
     if product is None:
-        flash("Product not found.")
-        return redirect(url_for("worker.dashboard"))
+        flash(request, "Product not found.")
+        raise RedirectException(url=str(request.url_for("worker.dashboard")))
 
     if request.method == "POST":
-        qty = request.form.get("stock")
+        form_data = await request.form()
+        qty = form_data.get("stock")
         try:
             new_stock = int(qty)
             if new_stock < 0:
-                flash("Stock level cannot be negative.")
-                return redirect(url_for("worker.restock", product_id=product_id))
+                flash(request, "Stock level cannot be negative.")
+                raise RedirectException(url=str(request.url_for("worker.restock", product_id=product_id)))
                 
             old_stock = product["stock"]
             db.execute("UPDATE products SET stock = ? WHERE id = ?", (new_stock, product_id))
             
             # Mark matching pending tasks for this product as completed
-            worker_id = session.get("worker_id")
+            worker_id = request.session.get("worker_id")
             db.execute(
                 "UPDATE tasks SET status = 'Completed' WHERE worker_id = ? AND product_id = ? AND status = 'Pending'",
                 (worker_id, product_id)
@@ -145,26 +157,28 @@ def restock(product_id):
             
             # Create activity log
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            worker_email = session.get("worker_email")
+            worker_email = request.session.get("worker_email")
             action = f"Restocked {product['name']} (Aisle {product['aisle']}): stock updated from {old_stock} to {new_stock}"
             db.execute(
                 "INSERT INTO activity_logs (worker_email, product_id, action, timestamp) VALUES (?, ?, ?, ?)",
                 (worker_email, product_id, action, timestamp)
             )
             db.commit()
-            flash(f"Stock for {product['name']} updated successfully.")
-            return redirect(url_for("worker.dashboard"))
+            flash(request, f"Stock for {product['name']} updated successfully.")
+            raise RedirectException(url=str(request.url_for("worker.dashboard")))
         except ValueError:
-            flash("Stock must be a valid integer.")
+            flash(request, "Stock must be a valid integer.")
 
-    return render_template("restock.html", product=product)
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="worker/restock.html", context={"product": product})
 
 
-@worker_bp.route("/profile")
+@router.get("/profile", name="worker.profile")
 @worker_login_required
-def profile():
-    email = session.get("worker_email")
+def profile(request: Request):
+    email = request.session.get("worker_email")
     worker = query_db("SELECT * FROM workers WHERE email = ?", (email,), one=True)
     total_updates_row = query_db("SELECT COUNT(1) AS c FROM activity_logs WHERE worker_email = ?", (email,), one=True)
     total_updates = total_updates_row["c"] if total_updates_row else 0
-    return render_template("profile.html", worker=worker, total_updates=total_updates)
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="worker/profile.html", context={"worker": worker, "total_updates": total_updates})

@@ -108,24 +108,6 @@ def alternative_products(product_name, limit=6):
     )
 
 
-def recommend_products_by_category(category, limit=6):
-    return search_category(category, limit)
-
-
-def recommend_cheaper_alternatives(product_name, limit=5):
-    product = query_db(
-        "SELECT * FROM products WHERE LOWER(name) = ? LIMIT 1",
-        (product_name.lower(),),
-        one=True
-    )
-    if not product:
-        return []
-    return query_db(
-        "SELECT * FROM products WHERE LOWER(category) = ? AND price < ? ORDER BY price ASC LIMIT ?",
-        (product["category"].lower(), product["price"], limit)
-    )
-
-
 def recommend_products_under_budget(budget, category=None, limit=6):
     if category:
         return query_db(

@@ -168,12 +168,3 @@ def init_db():
             )
 
     db.commit()
-
-
-def init_app(app):
-    db_path = app.config["DATABASE"]
-    folder = os.path.dirname(db_path)
-    if folder and not os.path.exists(folder):
-        os.makedirs(folder, exist_ok=True)
-    with app.app_context():
-        init_db()

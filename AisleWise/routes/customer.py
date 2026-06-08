@@ -1,56 +1,61 @@
 import json
 import uuid
+import inspect
 from functools import wraps
 from datetime import datetime
-from flask import Blueprint, render_template, request, session, redirect, url_for, flash
+from fastapi import APIRouter, Request
 from database.db import get_db, query_db
 from services.rag_engine import answer_customer_question
+from routes import RedirectException
 
-customer_bp = Blueprint("customer", __name__, template_folder="../templates")
-
-
-def customer_login_required(view):
-    @wraps(view)
-    def wrapped_view(**kwargs):
-        if session.get("customer_google_user") is None:
-            return redirect(url_for("customer.login"))
-        return view(**kwargs)
-    return wrapped_view
+router = APIRouter()
 
 
-def get_customer_session_id():
-    if not session.get("customer_session_id"):
-        session["customer_session_id"] = str(uuid.uuid4())
-    return session["customer_session_id"]
+def customer_login_required(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        request = kwargs.get("request") or (args[0] if args else None)
+        if not request or not request.session.get("customer_google_user"):
+            raise RedirectException(url="/customer/login")
+        if inspect.iscoroutinefunction(func):
+            return await func(*args, **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
 
 
-@customer_bp.route("/login", methods=["GET", "POST"])
-def login():
-    if session.get("customer_google_user"):
-        return redirect(url_for("customer.index"))
+def get_customer_session_id(request: Request):
+    if not request.session.get("customer_session_id"):
+        request.session["customer_session_id"] = str(uuid.uuid4())
+    return request.session["customer_session_id"]
+
+
+@router.api_route("/login", methods=["GET", "POST"], name="customer.login")
+async def login(request: Request):
+    if request.session.get("customer_google_user"):
+        raise RedirectException(url=str(request.url_for("customer.index")))
     
     if request.method == "POST":
-        # Simulate Google sign in authentication
-        session.clear()
-        session["customer_google_user"] = {
+        request.session.clear()
+        request.session["customer_google_user"] = {
             "name": "Alex Shopper",
             "email": "alex.shopper@gmail.com",
             "picture": "/static/images/google-avatar.png"
         }
-        return redirect(url_for("customer.index"))
+        raise RedirectException(url=str(request.url_for("customer.index")))
         
-    return render_template("customer/login.html")
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="customer/login.html")
 
 
-@customer_bp.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("customer.login"))
+@router.get("/logout", name="customer.logout")
+def logout(request: Request):
+    request.session.clear()
+    raise RedirectException(url=str(request.url_for("customer.login")))
 
 
-@customer_bp.route("/")
+@router.get("/", name="customer.index")
 @customer_login_required
-def index():
+def index(request: Request):
     categories = [
         "Dairy",
         "Snacks",
@@ -60,13 +65,14 @@ def index():
         "Personal Care",
         "Household"
     ]
-    return render_template("customer.html", categories=categories)
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request=request, name="customer.html", context={"categories": categories})
 
 
-@customer_bp.route("/chat", methods=["GET", "POST"])
+@router.api_route("/chat", methods=["GET", "POST"], name="customer.chat")
 @customer_login_required
-def chat():
-    session_id = get_customer_session_id()
+async def chat(request: Request):
+    session_id = get_customer_session_id(request)
     categories = [
         "Dairy",
         "Snacks",
@@ -79,9 +85,10 @@ def chat():
     
     user_query = None
     if request.method == "POST":
-        user_query = request.form.get("message", "").strip()
+        form_data = await request.form()
+        user_query = form_data.get("message", "").strip()
     else:
-        user_query = request.args.get("query", "").strip()
+        user_query = request.query_params.get("query", "").strip()
 
     bot_response = None
     products_list = []
@@ -130,11 +137,15 @@ def chat():
         (session_id,)
     )
 
-    return render_template(
-        "customer/chat.html",
-        chats=chats,
-        categories=categories,
-        query_history=query_history,
-        user_query=user_query,
-        bot_response=bot_response
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        request=request,
+        name="customer/chat.html",
+        context={
+            "chats": chats,
+            "categories": categories,
+            "query_history": query_history,
+            "user_query": user_query,
+            "bot_response": bot_response
+        }
     )

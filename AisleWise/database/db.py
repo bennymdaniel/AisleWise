@@ -1,15 +1,17 @@
+import contextvars
 import sqlite3
-from flask import current_app, g
+
+DATABASE_PATH = "database/aislewise.db"
+db_cv = contextvars.ContextVar("db")
 
 
 def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
-    return g.db
+    conn = db_cv.get(None)
+    if conn is None:
+        # Fallback/default for scripts running outside request scope (e.g. init db)
+        conn = sqlite3.connect(DATABASE_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+        conn.row_factory = sqlite3.Row
+    return conn
 
 
 def query_db(query, args=(), one=False):
@@ -19,8 +21,3 @@ def query_db(query, args=(), one=False):
     cursor.close()
     return (rows[0] if rows else None) if one else rows
 
-
-def close_db(e=None):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()

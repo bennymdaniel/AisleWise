@@ -22,7 +22,7 @@
             <select class="form-select py-2 rounded-3" id="product_id" name="product_id" onchange="updatePrefilledDescription()" required>
               <option value="" disabled selected>-- Select a product to restock --</option>
               {% for p in products %}
-                <option value="{{ p['id'] }}" data-name="{{ p['name'] }}" data-aisle="{{ p['aisle'] }}" data-stock="{{ p['stock'] }}" {% if request.args.get('product_id')|int == p['id'] %}selected{% endif %}>
+                <option value="{{ p['id'] }}" data-name="{{ p['name'] }}" data-aisle="{{ p['aisle'] }}" data-stock="{{ p['stock'] }}" {% if request.query_params.get('product_id')|int == p['id'] %}selected{% endif %}>
                   {{ p['name'] }} (Aisle {{ p['aisle'] }}) — Current Stock: {{ p['stock'] }}
                 </option>
               {% endfor %}
