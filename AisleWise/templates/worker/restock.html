@@ -14,16 +14,28 @@
           in Aisle {{ product['aisle'] }}
         </p>
         
+        {% set can_update = action_perms.get('Update Stock') and viewable_fields.get('stock') %}
+        
         <form method="post" class="mt-4">
           <div class="mb-4">
             <label class="form-label fw-semibold small" for="stock">New Stock Level / Quantity</label>
-            <input type="number" id="stock" name="stock" min="0" class="form-control py-2.5 rounded-3" value="{{ product['stock'] }}" placeholder="Enter the exact new stock count" required />
-            <div class="form-text text-muted small">Enter the total physical count currently available on shelves.</div>
+            <input type="number" id="stock" name="stock" min="0" class="form-control py-2.5 rounded-3" value="{{ product['stock'] }}" placeholder="Enter the exact new stock count" {% if not can_update %}disabled{% endif %} required />
+            <div class="form-text text-muted small">
+              {% if can_update %}
+                Enter the total physical count currently available on shelves.
+              {% else %}
+                <span class="text-danger">You do not have permission to update stock levels. (Read-only)</span>
+              {% endif %}
+            </div>
           </div>
           
           <div class="d-flex gap-2">
-            <button class="btn btn-primary rounded-3 w-100 py-2.5 shadow fw-semibold">Save Stock Level</button>
-            <a class="btn btn-outline-secondary rounded-3 w-100 py-2.5" href="{{ url_for('worker.dashboard') }}">Cancel</a>
+            {% if can_update %}
+              <button class="btn btn-primary rounded-3 w-100 py-2.5 shadow fw-semibold">Save Stock Level</button>
+            {% endif %}
+            <a class="btn btn-outline-secondary rounded-3 w-100 py-2.5" href="{{ url_for('worker.dashboard') }}">
+              {% if can_update %}Cancel{% else %}Back{% endif %}
+            </a>
           </div>
         </form>
       </div>

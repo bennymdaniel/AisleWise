@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+  <!-- Top header -->
+  <div class="col-12 d-flex justify-content-between align-items-center mb-2">
+    <div>
+      <h2 class="fw-bold m-0">Data Management</h2>
+      <p class="text-muted">Upload store inventory, configure customer visibility, and define custom schema columns dynamically.</p>
+    </div>
+    <a class="btn btn-secondary rounded-3" href="{{ url_for('admin.dashboard') }}">Back to Dashboard</a>
+  </div>
+
+  <!-- Import Summary Alert -->
+  {% if import_summary %}
+  <div class="col-12">
+    <div class="alert alert-success border-0 shadow-sm rounded-4 p-4 mb-0" role="alert">
+      <div class="d-flex align-items-start gap-3">
+        <div class="bg-success text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cloud-check-fill" viewBox="0 0 16 16">
+            <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 4.854-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708"/>
+          </svg>
+        </div>
+        <div>
+          <h5 class="alert-heading fw-bold mb-1">Import Completed Successfully!</h5>
+          <p class="mb-2">The dataset from <strong>{{ import_summary.filename }}</strong> has been processed.</p>
+          <ul class="mb-0 list-unstyled d-flex gap-4 flex-wrap text-success-emphasis fw-semibold">
+            <li>Total Rows processed: {{ import_summary.total }}</li>
+            <li>Imported successfully: {{ import_summary.imported }}</li>
+            <li>Skipped (invalid/duplicate): {{ import_summary.skipped }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Upload File Section -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-body p-4 d-flex flex-column">
+        <h4 class="fw-bold mb-1">Upload File</h4>
+        <p class="text-muted small mb-4">Upload new product catalog records (.csv or .xlsx).</p>
+        
+        <form action="{{ url_for('admin.upload_file') }}" method="post" enctype="multipart/form-data" class="mt-auto">
+          <div class="mb-4 p-4 border border-2 border-dashed rounded-3 text-center bg-light">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-file-earmark-arrow-up text-secondary mb-3" viewBox="0 0 16 16">
+              <path d="M8.5 11.5a.5.5 0 0 1-1 0V7.707L6.354 8.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 7.707z"/>
+              <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+            </svg>
+            <input type="file" class="form-control" name="file" id="file" accept=".csv, .xlsx" required>
+            <div class="form-text text-muted small mt-2">Accepted formats: .csv, .xlsx</div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-semibold">Preview Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Visibility Settings Section -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-body p-4 d-flex flex-column">
+        <h4 class="fw-bold mb-1">Customer Visibility</h4>
+        <p class="text-muted small mb-4">Choose which product fields customers can see on the portal and AI chatbot (RAG).</p>
+        
+        <form action="{{ url_for('admin.display_settings') }}" method="post" class="mt-auto">
+          <div class="row g-2 mb-4">
+            {% for setting in display_settings %}
+            <div class="col-6">
+              <div class="form-check form-switch p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                <label class="form-check-label fw-semibold text-capitalize text-dark small ms-0" for="visible_{{ setting['field_name'] }}">
+                  {{ setting['field_name'] | replace('_', ' ') }}
+                </label>
+                <input class="form-check-input ms-2" type="checkbox" role="switch" id="visible_{{ setting['field_name'] }}" name="visible_{{ setting['field_name'] }}" {% if setting['is_visible'] == 1 %}checked{% endif %}>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-success w-100 rounded-3 py-2 fw-semibold">Save Visibility Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Column Management Section -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-1">Add New Column</h4>
+        <p class="text-muted small mb-4">Create dynamic columns in the products inventory database.</p>
+        
+        <form action="{{ url_for('admin.add_column') }}" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small" for="column_name">Column Name</label>
+            <input type="text" class="form-control py-2 rounded-3" id="column_name" name="column_name" placeholder="e.g., brand, calories, allergens" required>
+            <div class="form-text text-muted small">Alphanumeric lowercase & underscores only (e.g., brand_name).</div>
+          </div>
+          
+          <div class="mb-4">
+            <label class="form-label fw-semibold small" for="data_type">Data Type</label>
+            <select class="form-select py-2 rounded-3" id="data_type" name="data_type" required>
+              <option value="TEXT" selected>TEXT (String values)</option>
+              <option value="INTEGER">INTEGER (Whole numbers)</option>
+              <option value="REAL">REAL (Decimal numbers)</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="btn btn-dark w-100 rounded-3 py-2 fw-semibold">Create Column</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Columns List Section -->
+  <div class="col-md-6">
+    <div class="card shadow-sm border-0 rounded-4 h-100">
+      <div class="card-body p-4 d-flex flex-column">
+        <h4 class="fw-bold mb-1">Custom Columns List</h4>
+        <p class="text-muted small mb-3">All custom columns added to products inventory.</p>
+        
+        <div class="table-responsive flex-grow-1" style="max-height: 250px; overflow-y: auto;">
+          <table class="table align-middle">
+            <thead>
+              <tr class="table-light small">
+                <th>Column Name</th>
+                <th>Data Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if custom_columns %}
+                {% for col in custom_columns %}
+                <tr>
+                  <td class="fw-semibold text-primary"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">{{ col.name }}</span></td>
+                  <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">{{ col.type }}</span></td>
+                  <td><span class="badge bg-success">Active</span></td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center py-4 text-muted small">No custom columns added yet.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload History Logs Section -->
+  <div class="col-12">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-1">Upload History</h4>
+        <p class="text-muted small mb-3">Audit logs of all database file imports.</p>
+        
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr class="table-light">
+                <th>ID</th>
+                <th>Filename</th>
+                <th>Import Date & Time</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if uploaded_files %}
+                {% for file in uploaded_files %}
+                <tr>
+                  <td>#{{ file.id }}</td>
+                  <td class="fw-semibold text-dark">{{ file.filename }}</td>
+                  <td>{{ file.upload_date }}</td>
+                  <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Success</span></td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center py-4 text-muted small">No file imports logged yet.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

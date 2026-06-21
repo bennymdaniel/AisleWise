@@ -154,19 +154,35 @@ def _build_context(products):
     if not products:
         return "No matching store products were found."
 
+    from database.db import get_db
+    try:
+        db = get_db()
+        cursor = db.execute("SELECT field_name FROM display_settings WHERE is_visible = 1")
+        visible_fields = {row["field_name"] for row in cursor.fetchall()}
+    except Exception:
+        visible_fields = {"name", "category", "price", "stock", "aisle", "description"}
+
     lines = []
     for product in products[:8]:
-        description = product["description"] if product["description"] else "No description available."
-        lines.append(
-            "Product:\n"
-            f"Name: {product['name']}\n"
-            f"Category: {product['category']}\n"
-            f"Price: ₹{product['price']:.2f}\n"
-            f"Stock: {product['stock']}\n"
-            f"Aisle: {product['aisle']}\n"
-            f"Description: {description}\n"
-        )
+        prod_lines = ["Product:"]
+        p_dict = dict(product)
+        
+        # Always output name if present, otherwise respect visibility
+        for field, val in p_dict.items():
+            if field == "id":
+                continue
+            if field in visible_fields:
+                if field == "price":
+                    try:
+                        prod_lines.append(f"Price: ₹{float(val):.2f}")
+                    except (ValueError, TypeError):
+                        prod_lines.append(f"Price: {val}")
+                else:
+                    val_str = val if val is not None else "N/A"
+                    prod_lines.append(f"{field.replace('_', ' ').capitalize()}: {val_str}")
+        lines.append("\n".join(prod_lines))
     return "\n".join(lines)
+
 
 
 @tool
@@ -332,17 +348,23 @@ def answer_customer_question(query):
     mode = result.get("mode")
     products = result.get("products") or []
 
+    from database.db import get_db
+    try:
+        db = get_db()
+        cursor = db.execute("SELECT field_name FROM display_settings WHERE is_visible = 1")
+        visible_fields = {row["field_name"] for row in cursor.fetchall()}
+    except Exception:
+        visible_fields = {"name", "category", "price", "stock", "aisle", "description"}
+
     serializable_products = []
     for p in products:
-        serializable_products.append({
-            "id": p["id"],
-            "name": p["name"],
-            "category": p["category"],
-            "price": p["price"],
-            "stock": p["stock"],
-            "aisle": p["aisle"],
-            "description": p["description"]
-        })
+        p_dict = dict(p)
+        item = {"id": p_dict.get("id")}
+        for field in visible_fields:
+            if field in p_dict:
+                item[field] = p_dict[field]
+        serializable_products.append(item)
+
 
     if (mode == "direct" and result.get("response")) or (mode == "context" and result.get("context")):
         context = result.get("context") or result.get("response") or _build_context(products)

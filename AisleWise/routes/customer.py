@@ -137,6 +137,9 @@ async def chat(request: Request):
         (session_id,)
     )
 
+    visible_fields_raw = query_db("SELECT field_name FROM display_settings WHERE is_visible = 1")
+    visible_fields = {row["field_name"] for row in visible_fields_raw}
+
     templates = request.app.state.templates
     return templates.TemplateResponse(
         request=request,
@@ -146,6 +149,7 @@ async def chat(request: Request):
             "categories": categories,
             "query_history": query_history,
             "user_query": user_query,
-            "bot_response": bot_response
+            "bot_response": bot_response,
+            "visible_fields": visible_fields
         }
     )

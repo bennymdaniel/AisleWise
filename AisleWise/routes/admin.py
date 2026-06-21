@@ -1,7 +1,12 @@
 import inspect
 from functools import wraps
 from datetime import datetime
-from fastapi import APIRouter, Request
+import csv
+import io
+import openpyxl
+import re
+import os
+from fastapi import APIRouter, Request, UploadFile, File
 from database.db import get_db, query_db
 from routes import RedirectException, flash
 
@@ -363,3 +368,365 @@ def analytics(request: Request):
 def logout(request: Request):
     request.session.clear()
     raise RedirectException(url=str(request.url_for("admin.login")))
+
+
+# ==========================================
+# DATA MANAGEMENT & WORKER PERMISSIONS
+# ==========================================
+
+@router.get("/data-management", name="admin.data_management")
+@admin_login_required
+def data_management(request: Request):
+    # Fetch customer display settings
+    display_settings = query_db("SELECT * FROM display_settings ORDER BY id")
+    
+    # Fetch uploaded files history
+    uploaded_files = query_db("SELECT * FROM uploaded_files ORDER BY upload_date DESC")
+    
+    # Fetch custom columns
+    db = get_db()
+    cursor = db.execute("PRAGMA table_info(products)")
+    columns = cursor.fetchall()
+    default_fields = {"id", "name", "category", "price", "stock", "aisle", "description"}
+    custom_columns = []
+    for col in columns:
+        col_name = col["name"]
+        if col_name not in default_fields:
+            custom_columns.append({
+                "name": col_name,
+                "type": col["type"]
+            })
+            
+    import_summary = request.session.pop("import_summary", None)
+    
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/data_management.html",
+        context={
+            "display_settings": display_settings,
+            "uploaded_files": uploaded_files,
+            "custom_columns": custom_columns,
+            "import_summary": import_summary
+        }
+    )
+
+
+@router.post("/upload-file", name="admin.upload_file")
+@admin_login_required
+async def upload_file(request: Request, file: UploadFile = File(...)):
+    filename = file.filename
+    if not (filename.endswith(".csv") or filename.endswith(".xlsx")):
+        flash(request, "Invalid file format. Only .csv and .xlsx files are accepted.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    try:
+        contents = await file.read()
+        rows = []
+        if filename.endswith(".xlsx"):
+            wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+            sheet = wb.active
+            for row in sheet.iter_rows(values_only=True):
+                if any(cell is not None for cell in row):
+                    rows.append([str(cell) if cell is not None else "" for cell in row])
+        else:
+            decoded = contents.decode("utf-8", errors="ignore")
+            csv_reader = csv.reader(io.StringIO(decoded))
+            rows = list(csv_reader)
+            
+        if not rows:
+            flash(request, "The uploaded file is empty.")
+            raise RedirectException(url=str(request.url_for("admin.data_management")))
+            
+        headers = [h.strip() for h in rows[0] if h is not None]
+        
+        temp_dir = "database"
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_path = os.path.join(temp_dir, "temp_upload.tmp")
+        with open(temp_path, "wb") as f:
+            f.write(contents)
+            
+        request.session["uploaded_filename"] = filename
+        request.session["preview_headers"] = headers
+        request.session["preview_rows"] = rows[1:21]
+        request.session["temp_file_path"] = temp_path
+        
+        raise RedirectException(url=str(request.url_for("admin.preview_file")))
+    except RedirectException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        flash(request, f"Error processing file: {e}")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+
+
+@router.get("/preview-file", name="admin.preview_file")
+@admin_login_required
+def preview_file(request: Request):
+    filename = request.session.get("uploaded_filename")
+    headers = request.session.get("preview_headers")
+    preview_rows = request.session.get("preview_rows")
+    
+    if not filename or not headers or preview_rows is None:
+        flash(request, "No preview data found. Please upload a file first.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    db = get_db()
+    cursor = db.execute("PRAGMA table_info(products)")
+    columns = cursor.fetchall()
+    db_fields = [row["name"] for row in columns if row["name"] != "id"]
+    
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/preview_file.html",
+        context={
+            "filename": filename,
+            "headers": headers,
+            "preview_rows": preview_rows,
+            "db_fields": db_fields
+        }
+    )
+
+
+@router.post("/import-data", name="admin.import_data")
+@admin_login_required
+async def import_data(request: Request):
+    filename = request.session.get("uploaded_filename")
+    temp_path = request.session.get("temp_file_path")
+    
+    if not filename or not temp_path or not os.path.exists(temp_path):
+        flash(request, "Upload session expired or no file found. Please upload again.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    form_data = await request.form()
+    mappings = {}
+    for k, v in form_data.items():
+        if k.startswith("map_") and v:
+            field_name = k[4:]
+            mappings[field_name] = v
+            
+    required_fields = ["name", "category", "price", "stock", "aisle"]
+    missing_required = [f for f in required_fields if f not in mappings]
+    if missing_required:
+        flash(request, f"Error: All core fields ({', '.join(required_fields)}) must be mapped. Missing: {', '.join(missing_required)}")
+        raise RedirectException(url=str(request.url_for("admin.preview_file")))
+        
+    try:
+        with open(temp_path, "rb") as f:
+            contents = f.read()
+            
+        rows = []
+        if filename.endswith(".xlsx"):
+            wb = openpyxl.load_workbook(io.BytesIO(contents), data_only=True)
+            sheet = wb.active
+            for row in sheet.iter_rows(values_only=True):
+                if any(cell is not None for cell in row):
+                    rows.append([str(cell) if cell is not None else "" for cell in row])
+        else:
+            decoded = contents.decode("utf-8", errors="ignore")
+            csv_reader = csv.reader(io.StringIO(decoded))
+            rows = list(csv_reader)
+            
+        if not rows:
+            flash(request, "The file contains no data.")
+            raise RedirectException(url=str(request.url_for("admin.data_management")))
+            
+        headers = [h.strip() for h in rows[0] if h is not None]
+        data_rows = rows[1:]
+        
+        db = get_db()
+        cursor = db.execute("PRAGMA table_info(products)")
+        columns_info = {row["name"]: row["type"] for row in cursor.fetchall()}
+        
+        imported = 0
+        skipped = 0
+        total_rows = len(data_rows)
+        
+        for row in data_rows:
+            row_dict = {}
+            for idx, h in enumerate(headers):
+                if idx < len(row):
+                    row_dict[h] = row[idx]
+                else:
+                    row_dict[h] = ""
+                    
+            db_values = {}
+            valid = True
+            
+            for field, header in mappings.items():
+                val_str = row_dict.get(header, "").strip()
+                field_type = columns_info.get(field, "TEXT").upper()
+                
+                if field in required_fields and not val_str:
+                    valid = False
+                    break
+                    
+                if val_str == "":
+                    db_values[field] = None
+                    continue
+                    
+                try:
+                    if field_type == "INTEGER":
+                        db_values[field] = int(float(val_str))
+                    elif field_type == "REAL":
+                        db_values[field] = float(val_str)
+                    else:
+                        db_values[field] = val_str
+                except ValueError:
+                    valid = False
+                    break
+                    
+            if valid:
+                if db_values.get("price") is not None and db_values["price"] < 0:
+                    valid = False
+                if db_values.get("stock") is not None and db_values["stock"] < 0:
+                    valid = False
+                    
+            if not valid:
+                skipped += 1
+                continue
+                
+            columns_str = ", ".join(db_values.keys())
+            placeholders = ", ".join(["?"] * len(db_values))
+            sql = f"INSERT INTO products ({columns_str}) VALUES ({placeholders})"
+            db.execute(sql, list(db_values.values()))
+            imported += 1
+            
+        db.execute(
+            "INSERT INTO uploaded_files (filename, upload_date) VALUES (?, ?)",
+            (filename, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        )
+        db.commit()
+        
+        request.session["import_summary"] = {
+            "filename": filename,
+            "total": total_rows,
+            "imported": imported,
+            "skipped": skipped
+        }
+        
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except Exception:
+            pass
+            
+        request.session.pop("uploaded_filename", None)
+        request.session.pop("preview_headers", None)
+        request.session.pop("preview_rows", None)
+        request.session.pop("temp_file_path", None)
+        
+        flash(request, "Import processing completed successfully.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+    except RedirectException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        flash(request, f"Error during import: {e}")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+
+
+@router.post("/add-column", name="admin.add_column")
+@admin_login_required
+async def add_column(request: Request):
+    form_data = await request.form()
+    column_name = form_data.get("column_name", "").strip().lower()
+    data_type = form_data.get("data_type", "TEXT").strip()
+    
+    if not column_name:
+        flash(request, "Column name is required.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    if not re.match(r"^[a-z_][a-z0-9_]*$", column_name):
+        flash(request, "Invalid column name format. Use lowercase letters, numbers, and underscores only. Must start with a letter.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    db = get_db()
+    cursor = db.execute("PRAGMA table_info(products)")
+    existing = [row["name"].lower() for row in cursor.fetchall()]
+    
+    if column_name in existing:
+        flash(request, f"Column '{column_name}' already exists in products table.")
+        raise RedirectException(url=str(request.url_for("admin.data_management")))
+        
+    try:
+        db.execute(f"ALTER TABLE products ADD COLUMN {column_name} {data_type}")
+        db.execute("INSERT OR IGNORE INTO display_settings (field_name, is_visible) VALUES (?, 1)", (column_name,))
+        db.execute("INSERT OR IGNORE INTO worker_field_permissions (field_name, can_view, can_edit) VALUES (?, 1, 0)", (column_name,))
+        db.commit()
+        
+        flash(request, f"Custom column '{column_name}' ({data_type}) created successfully.")
+    except Exception as e:
+        flash(request, f"Error adding custom column: {e}")
+        
+    raise RedirectException(url=str(request.url_for("admin.data_management")))
+
+
+@router.post("/display-settings", name="admin.display_settings")
+@admin_login_required
+async def display_settings_post(request: Request):
+    form_data = await request.form()
+    
+    db = get_db()
+    settings = query_db("SELECT field_name FROM display_settings")
+    
+    db.execute("UPDATE display_settings SET is_visible = 0")
+    for row in settings:
+        field = row["field_name"]
+        if form_data.get(f"visible_{field}"):
+            db.execute("UPDATE display_settings SET is_visible = 1 WHERE field_name = ?", (field,))
+            
+    db.commit()
+    flash(request, "Customer visibility settings updated successfully.")
+    raise RedirectException(url=str(request.url_for("admin.data_management")))
+
+
+@router.api_route("/worker-permissions", methods=["GET", "POST"], name="admin.worker_permissions")
+@admin_login_required
+async def worker_permissions(request: Request):
+    db = get_db()
+    
+    cursor = db.execute("PRAGMA table_info(products)")
+    columns = [row["name"] for row in cursor.fetchall() if row["name"] != "id"]
+    for col in columns:
+        db.execute("INSERT OR IGNORE INTO display_settings (field_name, is_visible) VALUES (?, 1)", (col,))
+        can_edit = 1 if col == "stock" else 0
+        db.execute("INSERT OR IGNORE INTO worker_field_permissions (field_name, can_view, can_edit) VALUES (?, 1, ?)", (col, can_edit))
+    db.commit()
+    
+    if request.method == "POST":
+        form_data = await request.form()
+        
+        db.execute("UPDATE worker_field_permissions SET can_view = 0, can_edit = 0")
+        db.execute("UPDATE worker_action_permissions SET is_enabled = 0")
+        
+        for k in form_data.keys():
+            if k.startswith("view_"):
+                field_name = k[5:]
+                db.execute("UPDATE worker_field_permissions SET can_view = 1 WHERE field_name = ?", (field_name,))
+            elif k.startswith("edit_"):
+                field_name = k[5:]
+                db.execute("UPDATE worker_field_permissions SET can_edit = 1 WHERE field_name = ?", (field_name,))
+            elif k.startswith("action_"):
+                action_name = k[7:]
+                db.execute("UPDATE worker_action_permissions SET is_enabled = 1 WHERE action_name = ?", (action_name,))
+                
+        db.commit()
+        flash(request, "Worker permissions updated successfully.")
+        raise RedirectException(url=str(request.url_for("admin.worker_permissions")))
+        
+    field_perms = query_db("SELECT * FROM worker_field_permissions")
+    action_perms = query_db("SELECT * FROM worker_action_permissions")
+    
+    templates = request.app.state.templates
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/worker_permissions.html",
+        context={
+            "field_perms": field_perms,
+            "action_perms": action_perms
+        }
+    )

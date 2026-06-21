@@ -121,6 +121,51 @@ def init_db():
         """
     )
 
+    # Create display_settings table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS display_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            field_name TEXT UNIQUE,
+            is_visible INTEGER DEFAULT 1
+        )
+        """
+    )
+
+    # Create uploaded_files table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS uploaded_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT,
+            upload_date TEXT
+        )
+        """
+    )
+
+    # Create worker_field_permissions table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS worker_field_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            field_name TEXT UNIQUE,
+            can_view INTEGER DEFAULT 1,
+            can_edit INTEGER DEFAULT 0
+        )
+        """
+    )
+
+    # Create worker_action_permissions table
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS worker_action_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            action_name TEXT UNIQUE,
+            is_enabled INTEGER DEFAULT 1
+        )
+        """
+    )
+
     # Seed admins table
     admin_row = db.execute(
         "SELECT id FROM admins WHERE store_id = ?", ("admin",)
@@ -130,6 +175,40 @@ def init_db():
             "INSERT INTO admins (store_id, password) VALUES (?, ?)",
             ("admin", "password123")
         )
+
+    # Seed display_settings table with default product fields
+    default_fields = ["name", "category", "price", "stock", "aisle", "description"]
+    for field in default_fields:
+        db.execute(
+            "INSERT OR IGNORE INTO display_settings (field_name, is_visible) VALUES (?, 1)",
+            (field,)
+        )
+
+    # Seed worker_field_permissions table with default product fields
+    # Stock is typically editable by worker, other fields are read-only/view-only by default.
+    for field in default_fields:
+        can_edit = 1 if field == "stock" else 0
+        db.execute(
+            "INSERT OR IGNORE INTO worker_field_permissions (field_name, can_view, can_edit) VALUES (?, 1, ?)",
+            (field, can_edit)
+        )
+
+    # Seed worker_action_permissions table with default actions
+    default_actions = [
+        "View Inventory",
+        "Update Stock",
+        "Restock Products",
+        "View Product Details",
+        "View Low Stock Alerts",
+        "View Analytics",
+        "View Product Metadata"
+    ]
+    for action in default_actions:
+        db.execute(
+            "INSERT OR IGNORE INTO worker_action_permissions (action_name, is_enabled) VALUES (?, 1)",
+            (action,)
+        )
+
 
     # Seed products table
     product_count = db.execute("SELECT COUNT(1) FROM products").fetchone()[0]

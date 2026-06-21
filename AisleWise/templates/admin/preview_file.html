@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="fw-bold m-0">Preview & Map Columns</h2>
+        <p class="text-muted">Previewing <strong>{{ filename }}</strong>. Map headers to AisleWise database fields before import.</p>
+      </div>
+      <a class="btn btn-secondary rounded-3" href="{{ url_for('admin.data_management') }}">Cancel Upload</a>
+    </div>
+  </div>
+
+  <!-- Data Preview Table (First 20 Rows) -->
+  <div class="col-12 mb-4">
+    <div class="card shadow-sm border-0 rounded-4">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-3 text-dark">Data Preview (First 20 Rows)</h4>
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+          <table class="table table-bordered align-middle table-striped table-hover mb-0">
+            <thead>
+              <tr class="table-light">
+                {% for h in headers %}
+                  <th>{{ h }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in preview_rows %}
+                <tr class="small text-muted">
+                  {% for cell in row %}
+                    <td>{{ cell }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Mapping Form -->
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+      <div class="card-body p-4">
+        <h4 class="fw-bold mb-1">Column Mapping</h4>
+        <p class="text-muted small mb-4">Establish the relationship between your file's headers and database fields. Required fields must be mapped.</p>
+        
+        <form action="{{ url_for('admin.import_data') }}" method="post">
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead>
+                <tr class="table-light small">
+                  <th>Database Field</th>
+                  <th>Status</th>
+                  <th>Uploaded Column</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for field in db_fields %}
+                  {% set is_required = field in ['name', 'category', 'price', 'stock', 'aisle'] %}
+                  <tr>
+                    <td class="fw-bold text-capitalize text-dark">
+                      {{ field | replace('_', ' ') }}
+                    </td>
+                    <td>
+                      {% if is_required %}
+                        <span class="badge bg-danger">Required</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Optional</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <select class="form-select py-2 rounded-3" name="map_{{ field }}" {% if is_required %}required{% endif %}>
+                        <option value="">-- Skip Field --</option>
+                        {% for h in headers %}
+                          {# Pre-select mapping if names are similar #}
+                          {% set h_norm = h.strip().lower() %}
+                          {% set f_norm = field.replace('_', '').lower() %}
+                          <option value="{{ h }}" 
+                            {% if h_norm == field or h_norm == f_norm or (field == 'name' and h_norm == 'product name') or (field == 'price' and h_norm == 'cost') or (field == 'stock' and h_norm == 'quantity') or (field == 'aisle' and h_norm == 'shelf location') %}selected{% endif %}>
+                            {{ h }}
+                          </option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="d-flex justify-content-end mt-4">
+            <a class="btn btn-outline-secondary rounded-3 px-4 py-2 me-2" href="{{ url_for('admin.data_management') }}">Cancel</a>
+            <button type="submit" class="btn btn-primary rounded-3 px-5 py-2 fw-semibold">Import Data</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

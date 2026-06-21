@@ -15,31 +15,49 @@
         <table class="table align-middle">
           <thead>
             <tr class="table-light">
-              <th scope="col">Product Name</th>
-              <th scope="col">Category</th>
-              <th scope="col">Stock Status</th>
-              <th scope="col">Aisle Location</th>
-              <th scope="col" class="text-end">Action</th>
+              {% for field in viewable_fields %}
+                <th scope="col" class="text-capitalize">{{ field | replace('_', ' ') }}</th>
+              {% endfor %}
+              {% if action_perms.get('Restock Products') %}
+                <th scope="col" class="text-end">Action</th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
             {% for p in items %}
               <tr>
-                <td class="fw-bold text-dark">{{ p['name'] }}</td>
-                <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ p['category'] }}</span></td>
-                <td>
-                  {% if p['stock'] <= 0 %}
-                    <span class="badge bg-danger-subtle text-danger">OUT OF STOCK (0)</span>
-                  {% else %}
-                    <span class="badge bg-warning-subtle text-warning-emphasis">LOW STOCK ({{ p['stock'] }})</span>
-                  {% endif %}
-                </td>
-                <td><span class="badge bg-light text-dark border">Aisle {{ p['aisle'] }}</span></td>
-                <td class="text-end">
-                  <a class="btn btn-sm btn-primary rounded-3 px-3" href="{{ url_for('worker.restock', product_id=p['id']) }}">
-                    Restock
-                  </a>
-                </td>
+                {% for field in viewable_fields %}
+                  <td>
+                    {% if field == 'name' %}
+                      <div class="fw-bold text-dark">{{ p['name'] }}</div>
+                    {% elif field == 'category' %}
+                      <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ p['category'] }}</span>
+                    {% elif field == 'stock' %}
+                      {% if p['stock'] <= 0 %}
+                        <span class="badge bg-danger-subtle text-danger">OUT OF STOCK (0)</span>
+                      {% else %}
+                        <span class="badge bg-warning-subtle text-warning-emphasis">LOW STOCK ({{ p['stock'] }})</span>
+                      {% endif %}
+                    {% elif field == 'aisle' %}
+                      <span class="badge bg-light text-dark border">Aisle {{ p['aisle'] }}</span>
+                    {% elif field == 'price' %}
+                      ₹{{ '%.2f' | format(p['price']) }}
+                    {% else %}
+                      {{ p[field] or '' }}
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                {% if action_perms.get('Restock Products') %}
+                  <td class="text-end">
+                    {% if viewable_fields.get('stock') is not none %}
+                      <a class="btn btn-sm btn-primary rounded-3 px-3" href="{{ url_for('worker.restock', product_id=p['id']) }}">
+                        Restock
+                      </a>
+                    {% else %}
+                      <span class="text-muted small">Read-only</span>
+                    {% endif %}
+                  </td>
+                {% endif %}
               </tr>
             {% endfor %}
           </tbody>
